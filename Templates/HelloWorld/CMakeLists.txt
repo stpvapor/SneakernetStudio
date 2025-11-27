@@ -1,29 +1,40 @@
-cmake_minimum_required(VERSION 3.10)
-project(HelloWorld C)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)  # optional bonus for LSP
-set_source_files_properties(main.c PROPERTIES OBJECT_DEPENDS "${CMAKE_SOURCE_DIR}/main.c")
+cmake_minimum_required(VERSION 3.20)
 
-# Zig toolchain
-set(CMAKE_TOOLCHAIN_FILE "${CMAKE_SOURCE_DIR}/../../tools/Toolchain_Zig.cmake")
+# Load toolchain FIRST — this sets up the compiler before project() probes it
+include(../../tools/Toolchain_Zig.cmake)
 
-# Disable linker depfiles for Zig
-set(CMAKE_LINK_DEPENDS_NO_SHARED ON)
+# Project name is just the current folder name — works in Projects/MyGame too
+get_filename_component(PROJECT_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
+project(${PROJECT_NAME} C)
 
-# Crawl src for all .c (main.c is NOT in src)
-file(GLOB SOURCES "src/*.c")
+# raylib is always at ../../tools/raylib relative to any project
+find_library(RAYLIB_LIB
+    NAMES raylib libraylib.a
+    PATHS ../../tools/raylib
+    NO_DEFAULT_PATH
+    REQUIRED
+)
 
-# Add executable (main.c + all src/*.c)
-add_executable(${PROJECT_NAME} main.c ${SOURCES})
+# Auto-glob all source files
+file(GLOB_RECURSE SOURCES "src/*.c")
 
-# Local raylib and project include
-set(RAYLIB_PATH "${CMAKE_SOURCE_DIR}/../../tools/raylib")
-target_include_directories(${PROJECT_NAME} PRIVATE "${RAYLIB_PATH}/include" include)
-
-# Link raylib
-target_link_libraries(${PROJECT_NAME} PRIVATE "${RAYLIB_PATH}/lib/libraylib.a" m dl pthread X11)
-
-# Auto-copy assets
+# Copy assets folder next to the binary
 file(GLOB_RECURSE ASSETS "assets/*")
 foreach(ASSET ${ASSETS})
-    configure_file(${ASSET} ${ASSET} COPYONLY)
+    file(RELATIVE_PATH REL_PATH "${CMAKE_CURRENT_SOURCE_DIR}" "${ASSET}")
+    configure_file("${ASSET}" "lin/${REL_PATH}" COPYONLY)
 endforeach()
+
+add_executable(${PROJECT_NAME} ${SOURCES})
+target_include_directories(${PROJECT_NAME} PRIVATE include ../../tools/raylib/src)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${RAYLIB_LIB} m)
+
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lin"
+)
+
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_STRIP} $<TARGET_FILE:${PROJECT_NAME}>
+    )
+endif()

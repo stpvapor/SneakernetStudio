@@ -1,34 +1,33 @@
-# Toolchain_Zig.cmake
-# CMake toolchain file for Zig-based C/C++ builds
-# Self-contained, relative paths – works anywhere
+# Toolchain_Zig.cmake – completely folder-name agnostic
+# Works from any depth, any location, any name
 
-# Compute ZIG_ROOT relative to the repo root (from project dir)
-set(ZIG_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../tools/zig" CACHE PATH "Path to zig installation")
+# Dynamically compute the absolute path to the repo root using PWD at configure time
+execute_process(
+    COMMAND bash -c "cd \"${CMAKE_CURRENT_SOURCE_DIR}/../..\" && pwd"
+    OUTPUT_VARIABLE REPO_ROOT_ABS
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
 
-# Zig executable path
-set(ZIG_EXE "${ZIG_ROOT}/zig")
+set(ZIG_ROOT "${REPO_ROOT_ABS}/tools/zig" CACHE PATH "Path to zig")
+set(ZIG_EXE  "${ZIG_ROOT}/zig" CACHE PATH "Zig executable")
 
-# This is the correct invocation for Zig 0.14.0+ (no deprecated wrappers)
-set(CMAKE_C_COMPILER "${ZIG_EXE} cc")
-set(CMAKE_CXX_COMPILER "${ZIG_EXE} c++")
+# Correct modern Zig 0.14.0+ invocation
+set(CMAKE_C_COMPILER   "${ZIG_EXE}" cc)
+set(CMAKE_CXX_COMPILER "${ZIG_EXE}" c++)
 
-# Target triple for x86_64 Linux (optimizes for your Threadripper + 4090)
 set(CMAKE_SYSTEM_NAME Linux)
 set(CMAKE_SYSTEM_PROCESSOR x86_64)
-set(CMAKE_C_COMPILER_TARGET x86_64-linux-gnu)
+set(CMAKE_C_COMPILER_TARGET   x86_64-linux-gnu)
 set(CMAKE_CXX_COMPILER_TARGET x86_64-linux-gnu)
 
-# Flags for release builds (static, optimized – leverages your 16-core beast)
-set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG -static-libgcc")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -static-libgcc -static-libstdc++")
-
-# Linker flags (static linking for portability, no system libs needed)
+# Release flags (static, fast, portable)
+set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -static-libstdc++")
 set(CMAKE_EXE_LINKER_FLAGS "-static -fuse-ld=lld")
 
-# Ensure Zig is found and valid
 if(NOT EXISTS "${ZIG_EXE}")
-    message(FATAL_ERROR "Zig not found at ${ZIG_EXE}. Run ./update-studio.sh first.")
+    message(FATAL_ERROR "Zig not found at ${ZIG_EXE}. Run ../update-studio.sh from repo root.")
 endif()
 
-message(STATUS "Zig toolchain loaded: ${ZIG_EXE} cc (target: x86_64-linux-gnu)")
-message(STATUS "Repo root assumed at: ${CMAKE_CURRENT_SOURCE_DIR}/../..")
+message(STATUS "Using Zig from: ${ZIG_EXE} cc")
+message(STATUS "Repo root resolved to: ${REPO_ROOT_ABS}")
