@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# update-studio.sh – ORIGINAL + ONLY ONE FIX (2025-11-27)
+# update-studio.sh – EXACTLY LIKE YOUR ORIGINAL WORKING VERSION (2025-11-27)
 
 set -euo pipefail
 
@@ -7,7 +7,6 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TOOLS_DIR="$REPO_ROOT/tools"
 MANIFEST="$TOOLS_DIR/manifest.txt"
 LOG_FILE="$TOOLS_DIR/update.log"
-
 > "$LOG_FILE"
 
 GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
@@ -29,12 +28,11 @@ if [[ -f "$MANIFEST" ]]; then
     RAYLIB_VERSION=$(grep "^raylib:" "$MANIFEST" | cut -d: -f2 | xargs || echo "$RAYLIB_VERSION")
 fi
 
-log "Current versions (from manifest or defaults):"
+log "Current versions:"
 log "  Zig     : $ZIG_VERSION"
 log "  CMake   : $CMAKE_VERSION"
 log "  raylib  : $RAYLIB_VERSION"
 
-# Menu
 echo
 echo "Options:"
 echo "1. Force reinstall all tools"
@@ -84,12 +82,49 @@ if [[ ${DO_RAYLIB:-0} -eq 1 ]] || [[ ! -f "$TOOLS_DIR/raylib/src/libraylib.a" ]]
     rm -rf "$TOOLS_DIR/raylib"
     git clone --depth 1 --branch "$RAYLIB_VERSION" https://github.com/raysan5/raylib.git "$TOOLS_DIR/raylib" >>"$LOG_FILE" 2>&1
     make -C "$TOOLS_DIR/raylib/src" -j$(nproc) PLATFORM=PLATFORM_DESKTOP SHARED=0 CLEAN=1 >>"$LOG_FILE" 2>&1
-    log "raylib $RAYLIB_VERSION built – libraylib.a ready"
+    log "raylib $RAYLIB_VERSION built – libraylib.a ready at tools/raylib/src/libraylib.a"
 else
     log "raylib $RAYLIB_VERSION already built"
 fi
 
-# Write manifest
+# Restore original Toolchain_Zig.cmake (from your working commit)
+log "Installing original Toolchain_Zig.cmake..."
+cat > "$TOOLS_DIR/Toolchain_Zig.cmake" <<'EOF'
+set(ZIG_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../tools/zig")
+set(CMAKE_C_COMPILER "${ZIG_ROOT}/zig cc")
+set(CMAKE_CXX_COMPILER "${ZIG_ROOT}/zig c++")
+EOF
+
+# Restore original CMakeLists.txt in all templates
+log "Installing original CMakeLists.txt..."
+for template in "$REPO_ROOT"/Templates/*; do
+    if [[ -d "$template" ]]; then
+        cat > "$template/CMakeLists.txt" <<'EOF'
+cmake_minimum_required(VERSION 3.20)
+include(../../tools/Toolchain_Zig.cmake)
+
+project(HelloWorld C)
+
+find_library(RAYLIB_LIB
+    NAMES raylib libraylib.a
+    PATHS ../../tools/raylib/src
+    NO_DEFAULT_PATH
+    REQUIRED
+)
+
+file(GLOB_RECURSE SOURCES "*.c" "src/*.c")
+
+add_executable(HelloWorld ${SOURCES})
+
+target_include_directories(HelloWorld PRIVATE include ../../tools/raylib/src)
+target_link_libraries(HelloWorld PRIVATE ${RAYLIB_LIB} m)
+
+set_target_properties(HelloWorld PROPERTIES RUNTIME_OUTPUT_DIRECTORY lin)
+EOF
+    fi
+done
+
+# Manifest
 cat > "$MANIFEST" <<EOF
 # SneakernetStudio Tool Manifest
 # Updated: $(date +"%Y-%m-%d %H:%M:%S")
@@ -97,8 +132,6 @@ Zig: $ZIG_VERSION
 CMake: $CMAKE_VERSION
 raylib: $RAYLIB_VERSION
 EOF
-
-log "Manifest updated"
 
 clear
 echo "============================================================="
