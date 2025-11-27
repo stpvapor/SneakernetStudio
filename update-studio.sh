@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# update-studio.sh – RESTORED ORIGINAL WORKING SETUP, FIXED SYMBOLS (2025-11-27)
+# update-studio.sh – ORIGINAL + ONLY ONE FIX (2025-11-27)
 
 set -euo pipefail
 
@@ -7,148 +7,89 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TOOLS_DIR="$REPO_ROOT/tools"
 MANIFEST="$TOOLS_DIR/manifest.txt"
 LOG_FILE="$TOOLS_DIR/update.log"
+
 > "$LOG_FILE"
 
-GREEN='\033[0;32m'; RED='\033[0;31m'; NC='\033[0m'
+GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
 log() { echo -e "${GREEN}[$(date +%H:%M:%S)]${NC} $*" | tee -a "$LOG_FILE"; }
 
 log "============================================================="
-log "     SneakernetStudio Updater – ORIGINAL FIXED"
-log "     Repo root: $REPO_ROOT"
+log "     SneakernetStudio Updater"
 log "============================================================="
 
-# Read versions from manifest or defaults
+# Default versions
 ZIG_VERSION="0.14.0"
 CMAKE_VERSION="4.2.0"
 RAYLIB_VERSION="5.5"
 
+# Read manifest if exists
 if [[ -f "$MANIFEST" ]]; then
-    ZIG_VERSION=$(grep "^Zig:" "$MANIFEST" | cut -d: -f2 | xargs)
-    CMAKE_VERSION=$(grep "^CMake:" "$MANIFEST" | cut -d: -f2 | xargs)
-    RAYLIB_VERSION=$(grep "^raylib:" "$MANIFEST" | cut -d: -f2 | xargs)
+    ZIG_VERSION=$(grep "^Zig:" "$MANIFEST" | cut -d: -f2 | xargs || echo "$ZIG_VERSION")
+    CMAKE_VERSION=$(grep "^CMake:" "$MANIFEST" | cut -d: -f2 | xargs || echo "$CMAKE_VERSION")
+    RAYLIB_VERSION=$(grep "^raylib:" "$MANIFEST" | cut -d: -f2 | xargs || echo "$RAYLIB_VERSION")
 fi
+
+log "Current versions (from manifest or defaults):"
+log "  Zig     : $ZIG_VERSION"
+log "  CMake   : $CMAKE_VERSION"
+log "  raylib  : $RAYLIB_VERSION"
+
+# Menu
+echo
+echo "Options:"
+echo "1. Force reinstall all tools"
+echo "2. Update/install Zig only"
+echo "3. Update/install CMake only"
+echo "4. Update/install raylib only"
+echo "5. Exit (use existing tools)"
+echo
+read -rp "Select [1-5]: " choice
+
+case "$choice" in
+    1) DO_ZIG=1; DO_CMAKE=1; DO_RAYLIB=1 ;;
+    2) DO_ZIG=1; DO_CMAKE=0; DO_RAYLIB=0 ;;
+    3) DO_ZIG=0; DO_CMAKE=1; DO_RAYLIB=0 ;;
+    4) DO_ZIG=0; DO_CMAKE=0; DO_RAYLIB=1 ;;
+    5) log "Bye!"; exit 0 ;;
+    *) log "Invalid choice"; exit 1 ;;
+esac
 
 mkdir -p "$TOOLS_DIR"
 
 # Zig
-if [[ ! -f "$TOOLS_DIR/zig/zig" ]]; then
+if [[ ${DO_ZIG:-0} -eq 1 ]] || [[ ! -f "$TOOLS_DIR/zig/zig" ]]; then
     log "Downloading Zig $ZIG_VERSION..."
+    rm -rf "$TOOLS_DIR/zig"
     curl -L# "https://ziglang.org/download/$ZIG_VERSION/zig-linux-x86_64-$ZIG_VERSION.tar.xz" | tar -xJ -C "$TOOLS_DIR"
     mv "$TOOLS_DIR/zig-linux-x86_64-$ZIG_VERSION" "$TOOLS_DIR/zig"
     log "Zig $ZIG_VERSION installed"
 else
-    log "Zig $ZIG_VERSION present"
+    log "Zig $ZIG_VERSION already present"
 fi
 
 # CMake
-if [[ ! -f "$TOOLS_DIR/cmake/bin/cmake" ]]; then
-    log "Downloading CMake $CMAKE_VERSION..."
+if [[ ${DO_CMAKE:-0} -eq 1 ]] || [[ ! -f "$TOOLS_DIR/cmake/bin/cmake" ]]; then
+    log "Downloading portable CMake $CMAKE_VERSION..."
+    rm -rf "$TOOLS_DIR/cmake"
     curl -L# "https://github.com/Kitware/CMake/releases/download/v$CMAKE_VERSION/cmake-$CMAKE_VERSION-linux-x86_64.tar.gz" | tar -xz -C "$TOOLS_DIR"
     mv "$TOOLS_DIR/cmake-$CMAKE_VERSION-linux-x86_64" "$TOOLS_DIR/cmake"
     log "CMake $CMAKE_VERSION installed"
 else
-    log "CMake $CMAKE_VERSION present"
+    log "CMake $CMAKE_VERSION already present"
 fi
 
 # raylib
-if [[ ! -f "$TOOLS_DIR/raylib/src/libraylib.a" ]]; then
+if [[ ${DO_RAYLIB:-0} -eq 1 ]] || [[ ! -f "$TOOLS_DIR/raylib/src/libraylib.a" ]]; then
     log "Cloning and building raylib $RAYLIB_VERSION..."
     rm -rf "$TOOLS_DIR/raylib"
     git clone --depth 1 --branch "$RAYLIB_VERSION" https://github.com/raysan5/raylib.git "$TOOLS_DIR/raylib" >>"$LOG_FILE" 2>&1
     make -C "$TOOLS_DIR/raylib/src" -j$(nproc) PLATFORM=PLATFORM_DESKTOP SHARED=0 CLEAN=1 >>"$LOG_FILE" 2>&1
     log "raylib $RAYLIB_VERSION built – libraylib.a ready"
 else
-    log "raylib $RAYLIB_VERSION built"
+    log "raylib $RAYLIB_VERSION already built"
 fi
 
-# Original Toolchain_Zig.cmake – minimal + depfile disable + _GNU_SOURCE
-log "Installing original Toolchain_Zig.cmake..."
-cat > "$TOOLS_DIR/Toolchain_Zig.cmake" <<EOF
-cmake_minimum_required(VERSION 3.20)
-
-get_filename_component(REPO_ROOT "\${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
-set(ZIG_ROOT "\${REPO_ROOT}/tools/zig")
-set(ZIG_EXE  "\${ZIG_ROOT}/zig")
-
-set(CMAKE_C_COMPILER   "\${ZIG_EXE}" cc)
-set(CMAKE_CXX_COMPILER "\${ZIG_EXE}" c++)
-
-# Disable depfile (fixes --dependency-file)
-set(CMAKE_C_LINKER_DEPFILE_SUPPORTED FALSE)
-set(CMAKE_CXX_LINKER_DEPFILE_SUPPORTED FALSE)
-
-# Force C99 symbols for __isoc23_* (fixes undefined symbols)
-add_compile_definitions(_GNU_SOURCE)
-
-set(CMAKE_SYSTEM_NAME Linux)
-set(CMAKE_SYSTEM_PROCESSOR x86_64)
-set(CMAKE_C_COMPILER_TARGET x86_64-linux-gnu)
-set(CMAKE_CXX_COMPILER_TARGET x86_64-linux-gnu)
-
-set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
-
-if(NOT EXISTS "\${ZIG_EXE}")
-    message(FATAL_ERROR "Zig not found at \${ZIG_EXE}")
-endif()
-
-message(STATUS "Zig compiler → \${ZIG_EXE} cc")
-EOF
-
-# Install original CMakeLists.txt (main.c in root + src/*.c globbed)
-log "Installing original CMakeLists.txt..."
-for template in "$REPO_ROOT"/Templates/*; do
-    if [[ -d "$template" ]]; then
-        cat > "$template/CMakeLists.txt" <<EOF
-cmake_minimum_required(VERSION 3.20)
-include(../../tools/Toolchain_Zig.cmake)
-
-get_filename_component(PROJECT_NAME \${CMAKE_CURRENT_SOURCE_DIR} NAME)
-project(\${PROJECT_NAME} C)
-
-find_library(RAYLIB_LIB
-    NAMES raylib libraylib.a
-    PATHS ../../tools/raylib/src
-    NO_DEFAULT_PATH
-    REQUIRED
-)
-
-# main.c in root, rest in src/
-file(GLOB MAIN_SOURCE "main.c")
-file(GLOB_RECURSE SRC_SOURCES "src/*.c")
-set(SOURCES \${MAIN_SOURCE} \${SRC_SOURCES})
-
-file(GLOB_RECURSE ASSETS "assets/*")
-
-add_executable(\${PROJECT_NAME} \${SOURCES})
-
-target_include_directories(\${PROJECT_NAME} PRIVATE
-    include
-    ../../tools/raylib/src
-)
-
-target_link_libraries(\${PROJECT_NAME} PRIVATE \${RAYLIB_LIB} m)
-
-set_target_properties(\${PROJECT_NAME} PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "\${CMAKE_BINARY_DIR}/lin"
-)
-
-foreach(ASSET \${ASSETS})
-    file(RELATIVE_PATH REL_PATH "\${CMAKE_CURRENT_SOURCE_DIR}" "\${ASSET}")
-    configure_file("\${ASSET}" "lin/\${REL_PATH}" COPYONLY)
-endforeach()
-
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    add_custom_command(TARGET \${PROJECT_NAME} POST_BUILD
-        COMMAND \${CMAKE_STRIP} \$<TARGET_FILE:\${PROJECT_NAME}>
-    )
-endif()
-EOF
-        log "Fixed CMakeLists.txt in $(basename "$template")"
-    fi
-done
-
-# Manifest
+# Write manifest
 cat > "$MANIFEST" <<EOF
 # SneakernetStudio Tool Manifest
 # Updated: $(date +"%Y-%m-%d %H:%M:%S")
@@ -157,10 +98,7 @@ CMake: $CMAKE_VERSION
 raylib: $RAYLIB_VERSION
 EOF
 
-# Final screen
-ZIG_VERSION=$(grep "^Zig:" "$MANIFEST" | cut -d: -f2 | xargs)
-CMAKE_VERSION=$(grep "^CMake:" "$MANIFEST" | cut -d: -f2 | xargs)
-RAYLIB_VERSION=$(grep "^raylib:" "$MANIFEST" | cut -d: -f2 | xargs)
+log "Manifest updated"
 
 clear
 echo "============================================================="
