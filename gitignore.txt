@@ -1,0 +1,56 @@
+# === Build artifacts (all targets) ===
+build/
+zig-out/
+.zig-cache/
+
+# === Local tool caches (never commit) ===
+tools/.cache/
+tools/cmake/.cache/
+tools/zig/.cache/
+
+# === CMake temporary files ===
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+
+# === Zig build system leftovers ===
+zig-cache/
+zig-out/
+
+# === Compiled binaries (linux, windows, etc.) ===
+*.exe
+HelloWorld
+*.dll
+*.so
+*.a
+
+# === Log files ===
+install.log
+*.log
+
+# === macOS garbage ===
+.DS_Store
+._*
+
+# === Editor / IDE garbage ===
+.vscode/
+.idea/
+*.swp
+*~
+*.swn
+*.swo
+
+# === Python cache (if you ever add scripts) ===
+__pycache__/
+*.pyc
+
+# === Optional: keep assets out of git if they're large (uncomment if you want) ===
+# assets/textures/*.png
+# assets/sounds/*.wav
+
+# === Keep these (never ignore) ===
+!tools/Toolchain_Zig.cmake
+!update-studio.sh
+!update-studio.bat
