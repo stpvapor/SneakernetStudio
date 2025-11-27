@@ -1,45 +1,15 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
 
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TOOLS_DIR="$PROJECT_ROOT/../../tools"
-BUILD_ROOT="$PROJECT_ROOT/build"
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 
-TARGET="lin"
-CLEAN="no"
-
-# Parse arguments properly
-for arg in "$@"; do
-    case "$arg" in
-        lin|win|arm)
-            TARGET="$arg"
-            ;;
-        clean=yes)
-            CLEAN="yes"
-            ;;
-    esac
-done
-
-# FULL CLEAN — wipes everything
-if [ "$CLEAN" = "yes" ]; then
-    echo "Cleaning build tree and Zig cache..."
-    rm -rf "$BUILD_ROOT" "$PROJECT_ROOT/.zig-cache" "$PROJECT_ROOT/zig-out"
+if [[ "$1" == "clean=yes" ]]; then
+    rm -rf build .zig-cache
 fi
 
-TARGET_DIR="$BUILD_ROOT/$TARGET"
-mkdir -p "$TARGET_DIR"
-cd "$TARGET_DIR"
+mkdir -p build/lin
 
-export ZIG_GLOBAL_CACHE_DIR="$PWD/.zig-cache"
+cmake -S . -B build/lin -DCMAKE_TOOLCHAIN_FILE="$REPO_ROOT/tools/Toolchain_Zig.cmake" -DCMAKE_BUILD_TYPE=Debug
 
-case "$TARGET" in
-    lin) ZIG_TARGET="" ;;
-    win) ZIG_TARGET="-DCMAKE_C_COMPILER=$TOOLS_DIR/zig/zig cc -target x86_64-windows-gnu -DCMAKE_CXX_COMPILER=$TOOLS_DIR/zig/zig c++ -target x86_64-windows-gnu" ;;
-    arm) ZIG_TARGET="-DCMAKE_C_COMPILER=$TOOLS_DIR/zig/zig cc -target aarch64-linux-gnu -DCMAKE_CXX_COMPILER=$TOOLS_DIR/zig/zig c++ -target aarch64-linux-gnu" ;;
-esac
+cmake --build build/lin -j$(nproc)
 
-cmake "$PROJECT_ROOT" -DCMAKE_TOOLCHAIN_FILE="$TOOLS_DIR/Toolchain_Zig.cmake" $ZIG_TARGET
-make -j$(nproc)
-
-echo "Build complete: $TARGET_DIR/HelloWorld (target: $TARGET)"
-echo "Run with: cd \"$TARGET_DIR\" && ./HelloWorld"
+echo "Build complete! Run with: ./build/lin/HelloWorld"
