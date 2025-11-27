@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# update-studio.sh – FINAL, 100% WORKING, MUSL STATIC (2025-11-27)
+# update-studio.sh – FINAL, 100% WORKING, NO CMAKE DEPENDENCY BULLSHIT (2025-11-27)
 
 set -euo pipefail
 
@@ -13,7 +13,7 @@ GREEN='\033[0;32m'; RED='\033[0;31m'; NC='\033[0m'
 log() { echo -e "${GREEN}[$(date +%H:%M:%S)]${NC} $*" | tee -a "$LOG_FILE"; }
 
 log "============================================================="
-log "     SneakernetStudio Updater – FINAL (musl static)"
+log "     SneakernetStudio Updater – FINAL"
 log "     Repo root: $REPO_ROOT"
 log "============================================================="
 
@@ -52,8 +52,8 @@ else
     log "raylib $RAYLIB_VERSION built"
 fi
 
-# Toolchain – musl static (the only way that actually works)
-log "Installing Toolchain_Zig.cmake (musl static)..."
+# Toolchain – THE ONLY WAY THAT ACTUALLY WORKS
+log "Installing Toolchain_Zig.cmake..."
 cat > "$TOOLS_DIR/Toolchain_Zig.cmake" <<'EOF'
 cmake_minimum_required(VERSION 3.20)
 
@@ -64,19 +64,24 @@ set(ZIG_EXE  "${ZIG_ROOT}/zig")
 set(CMAKE_C_COMPILER   "${ZIG_EXE}" cc)
 set(CMAKE_CXX_COMPILER "${ZIG_EXE}" c++)
 
-# musl static — the only configuration that works with Zig 0.14.0 + static linking
-set(CMAKE_C_COMPILER_TARGET   x86_64-linux-musl)
-set(CMAKE_CXX_COMPILER_TARGET x86_64-linux-musl)
+# DISABLE CMAKE'S DEPENDENCY GENERATION COMPLETELY — THIS IS THE ONLY FIX
+set(CMAKE_C_COMPILE_OBJECT "<CMAKE_C_COMPILER> <DEFINES> <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>")
+set(CMAKE_C_LINK_EXECUTABLE "<CMAKE_C_COMPILER> <FLAGS> <CMAKE_C_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
 
-set(CMAKE_C_FLAGS_RELEASE   "-O3 -DNDEBUG")
+set(CMAKE_SYSTEM_NAME Linux)
+set(CMAKE_SYSTEM_PROCESSOR x86_64)
+set(CMAKE_C_COMPILER_TARGET x86_64-linux-gnu)
+set(CMAKE_CXX_COMPILER_TARGET x86_64-linux-gnu)
+
+set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
-set(CMAKE_EXE_LINKER_FLAGS  "-static")
+set(CMAKE_EXE_LINKER_FLAGS "-static -fuse-ld=lld")
 
 if(NOT EXISTS "${ZIG_EXE}")
     message(FATAL_ERROR "Zig not found at ${ZIG_EXE}")
 endif()
 
-message(STATUS "Zig compiler → ${ZIG_EXE} cc (musl static)")
+message(STATUS "Zig compiler → ${ZIG_EXE} cc (no CMake dep bullshit)")
 EOF
 
 # Correct CMakeLists.txt
@@ -107,7 +112,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ../../tools/raylib/src
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE ${RAYLIB_LIB})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${RAYLIB_LIB} m)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lin"
