@@ -65,6 +65,12 @@ find "$REPO_ROOT" \( -path "$REPO_ROOT/tools" -o -path "*/build" \) -prune -fals
     fi
 done
 
+log "Ensuring all projects have raylib include path..."
+find "$REPO_ROOT/Templates" "$REPO_ROOT/Projects" -name CMakeLists.txt -exec grep -L "raylib/src" {} \; 2>/dev/null | while read file; do
+    sed -i '/target_include_directories.*PRIVATE.*include/a\    ../../tools/raylib/src' "$file"
+    log "Fixed raylib include in $file"
+done
+
 log "All projects now have correct raylib include path – FOR REAL THIS TIME"
 
 log "============================================================="
