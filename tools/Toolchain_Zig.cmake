@@ -7,8 +7,8 @@ set(CMAKE_SYSTEM_PROCESSOR x86_64)  # Adjust for target (e.g., i686 for 32-bit)
 
 # Zig as compiler (wrapper path)
 set(ZIG_ROOT "$ENV{HOME}/_/SneakernetStudio/tools/zig")
-set(CMAKE_C_COMPILER "${ZIG_ROOT}/zig-cc")
-set(CMAKE_CXX_COMPILER "${ZIG_ROOT}/zig-c++")
+set(CMAKE_C_COMPILER "${ZIG_ROOT}/zig cc")
+set(CMAKE_CXX_COMPILER "${ZIG_ROOT}/zig c++")
 
 # Flags
 set(CMAKE_C_FLAGS_INIT "-std=c99 -Wall -Wextra")
