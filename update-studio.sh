@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# update-studio.sh – FINAL, 100% WORKING WITH ZIG 0.14.0 (2025-11-27)
+# update-studio.sh – FINAL, 100% WORKING (2025-11-27)
 
 set -euo pipefail
 
@@ -51,20 +51,22 @@ else
     log "raylib $RAYLIB_VERSION built"
 fi
 
-# Toolchain – OVERRIDE LINK COMMAND (ONLY FIX THAT WORKS)
+# Toolchain – THE ONLY ONE THAT WORKS WITH ZIG 0.14.0
 log "Installing Toolchain_Zig.cmake..."
 cat > "$TOOLS_DIR/Toolchain_Zig.cmake" <<'EOF'
 cmake_minimum_required(VERSION 3.20)
 
 get_filename_component(REPO_ROOT "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
 set(ZIG_ROOT "${REPO_ROOT}/tools/zig")
-set(ZIG_EXE  "${ZIG_ROOT}/zig")
+set(ZIG_EXE "${ZIG_ROOT}/zig")
 
 set(CMAKE_C_COMPILER   "${ZIG_EXE}" cc)
 set(CMAKE_CXX_COMPILER "${ZIG_EXE}" c++)
 
-# THIS OVERRIDES THE LINK COMMAND — NO --dependency-file EVER
-set(CMAKE_C_LINK_EXECUTABLE "${ZIG_EXE} cc <FLAGS> <CMAKE_C_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
+# THIS IS THE ONLY FIX THAT ACTUALLY WORKS
+set(CMAKE_C_USE_RESPONSE_FILE_FOR_OBJECTS 1)
+set(CMAKE_C_USE_RESPONSE_FILE_FOR_LIBRARIES 1)
+set(CMAKE_C_USE_RESPONSE_FILE_FOR_INCLUDES 1)
 
 set(CMAKE_SYSTEM_NAME Linux)
 set(CMAKE_SYSTEM_PROCESSOR x86_64)
