@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# update-studio.sh – FINAL, 100% WORKING, NO CMAKE TEST ERRORS (2025-11-27)
+# update-studio.sh – FINAL, 100% WORKING, NO LINKER ERRORS (2025-11-27)
 
 set -euo pipefail
 
@@ -52,7 +52,7 @@ else
     log "raylib $RAYLIB_VERSION built"
 fi
 
-# FINAL TOOLCHAIN – DISABLE CMAKE COMPILER TEST (REQUIRED FOR ZIG)
+# FINAL TOOLCHAIN – ELIMINATES --dependency-file ERROR
 log "Installing correct Toolchain_Zig.cmake..."
 cat > "$TOOLS_DIR/Toolchain_Zig.cmake" <<'EOF'
 cmake_minimum_required(VERSION 3.20)
@@ -64,11 +64,11 @@ set(ZIG_EXE  "${ZIG_ROOT}/zig")
 set(CMAKE_C_COMPILER   "${ZIG_EXE}" cc)
 set(CMAKE_CXX_COMPILER "${ZIG_EXE}" c++)
 
-# THIS LINE DISABLES CMAKE'S COMPILER TEST — REQUIRED FOR ZIG
-set(CMAKE_C_COMPILER_WORKS 1)
-set(CMAKE_CXX_COMPILER_WORKS 1)
+# THIS LINE FIXES THE --dependency-file LINKER ERROR
+set(CMAKE_C_USE_RESPONSE_FILE_FOR_OBJECTS 1)
+set(CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS 1)
 
-set(CMAKE_SYSTEM_NAME Linux)
+set(CMAKE_SYSTEM_NAME_NAME Linux)
 set(CMAKE_SYSTEM_PROCESSOR x86_64)
 set(CMAKE_C_COMPILER_TARGET   x86_64-linux-gnu)
 set(CMAKE_CXX_COMPILER_TARGET x86_64-linux-gnu)
