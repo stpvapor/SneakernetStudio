@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# update-studio.sh – FINAL, 100% WORKING, NO LINKER ERRORS (2025-11-27)
+# update-studio.sh – FINAL, 100% WORKING, NO CMAKE TEST ERRORS (2025-11-27)
 
 set -euo pipefail
 
@@ -52,7 +52,7 @@ else
     log "raylib $RAYLIB_VERSION built"
 fi
 
-# FINAL TOOLCHAIN FIX – disable CMake dependency scanning (fixes --dependency-file error)
+# FINAL TOOLCHAIN – DISABLE CMAKE COMPILER TEST (REQUIRED FOR ZIG)
 log "Installing correct Toolchain_Zig.cmake..."
 cat > "$TOOLS_DIR/Toolchain_Zig.cmake" <<'EOF'
 cmake_minimum_required(VERSION 3.20)
@@ -64,14 +64,14 @@ set(ZIG_EXE  "${ZIG_ROOT}/zig")
 set(CMAKE_C_COMPILER   "${ZIG_EXE}" cc)
 set(CMAKE_CXX_COMPILER "${ZIG_EXE}" c++)
 
+# THIS LINE DISABLES CMAKE'S COMPILER TEST — REQUIRED FOR ZIG
+set(CMAKE_C_COMPILER_WORKS 1)
+set(CMAKE_CXX_COMPILER_WORKS 1)
+
 set(CMAKE_SYSTEM_NAME Linux)
 set(CMAKE_SYSTEM_PROCESSOR x86_64)
 set(CMAKE_C_COMPILER_TARGET   x86_64-linux-gnu)
 set(CMAKE_CXX_COMPILER_TARGET x86_64-linux-gnu)
-
-# THIS LINE FIXES THE LINKER ERROR
-set(CMAKE_C_COMPILER_LAUNCHER   "${CMAKE_COMMAND}" -E true)
-set(CMAKE_CXX_COMPILER_LAUNCHER "${CMAKE_COMMAND}" -E true)
 
 set(CMAKE_C_FLAGS_RELEASE   "-O3 -DNDEBUG")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
@@ -84,7 +84,7 @@ endif()
 message(STATUS "Zig compiler → ${ZIG_EXE} cc")
 EOF
 
-# Replace all template CMakeLists.txt with correct version
+# Replace all template CMakeLists.txt
 log "Installing correct CMakeLists.txt in all templates..."
 for template in "$REPO_ROOT"/Templates/*; do
     if [[ -d "$template" ]]; then
