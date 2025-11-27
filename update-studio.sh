@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# update-studio.sh – EXACTLY LIKE YOUR ORIGINAL WORKING VERSION (2025-11-27)
+# update-studio.sh – ORIGINAL WORKING VERSION, FIXED FOR ZIG 0.14.0 (2025-11-27)
 
 set -euo pipefail
 
@@ -16,12 +16,10 @@ log "============================================================="
 log "     SneakernetStudio Updater"
 log "============================================================="
 
-# Default versions
 ZIG_VERSION="0.14.0"
 CMAKE_VERSION="4.2.0"
 RAYLIB_VERSION="5.5"
 
-# Read manifest if exists
 if [[ -f "$MANIFEST" ]]; then
     ZIG_VERSION=$(grep "^Zig:" "$MANIFEST" | cut -d: -f2 | xargs || echo "$ZIG_VERSION")
     CMAKE_VERSION=$(grep "^CMake:" "$MANIFEST" | cut -d: -f2 | xargs || echo "$CMAKE_VERSION")
@@ -82,20 +80,20 @@ if [[ ${DO_RAYLIB:-0} -eq 1 ]] || [[ ! -f "$TOOLS_DIR/raylib/src/libraylib.a" ]]
     rm -rf "$TOOLS_DIR/raylib"
     git clone --depth 1 --branch "$RAYLIB_VERSION" https://github.com/raysan5/raylib.git "$TOOLS_DIR/raylib" >>"$LOG_FILE" 2>&1
     make -C "$TOOLS_DIR/raylib/src" -j$(nproc) PLATFORM=PLATFORM_DESKTOP SHARED=0 CLEAN=1 >>"$LOG_FILE" 2>&1
-    log "raylib $RAYLIB_VERSION built – libraylib.a ready at tools/raylib/src/libraylib.a"
+    log "raylib $RAYLIB_VERSION built – libraylib.a ready"
 else
     log "raylib $RAYLIB_VERSION already built"
 fi
 
-# Restore original Toolchain_Zig.cmake (from your working commit)
-log "Installing original Toolchain_Zig.cmake..."
+# ORIGINAL WORKING Toolchain_Zig.cmake — fixed for Zig 0.14.0
+log "Installing original Toolchain_Zig.cmake (fixed for Zig 0.14.0)..."
 cat > "$TOOLS_DIR/Toolchain_Zig.cmake" <<'EOF'
 set(ZIG_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../tools/zig")
-set(CMAKE_C_COMPILER "${ZIG_ROOT}/zig cc")
-set(CMAKE_CXX_COMPILER "${ZIG_ROOT}/zig c++")
+set(CMAKE_C_COMPILER "${ZIG_ROOT}/zig" cc)
+set(CMAKE_CXX_COMPILER "${ZIG_ROOT}/zig" c++)
 EOF
 
-# Restore original CMakeLists.txt in all templates
+# ORIGINAL WORKING CMakeLists.txt
 log "Installing original CMakeLists.txt..."
 for template in "$REPO_ROOT"/Templates/*; do
     if [[ -d "$template" ]]; then
