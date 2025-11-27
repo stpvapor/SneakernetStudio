@@ -1,28 +1,34 @@
 # Toolchain_Zig.cmake
-# CMake toolchain file for Zig as C/C++ compiler
-# Usage: cmake -DCMAKE_TOOLCHAIN_FILE=tools/Toolchain_Zig.cmake ..
+# CMake toolchain file for Zig-based C/C++ builds
+# Self-contained, relative paths – works anywhere
 
-set(CMAKE_SYSTEM_NAME Generic)
-set(CMAKE_SYSTEM_PROCESSOR x86_64)  # Adjust for target (e.g., i686 for 32-bit)
+# Compute ZIG_ROOT relative to the repo root (from project dir)
+set(ZIG_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../tools/zig" CACHE PATH "Path to zig installation")
 
-# Zig as compiler (wrapper path)
-set(ZIG_ROOT "$ENV{HOME}/_/SneakernetStudio/tools/zig")
-set(CMAKE_C_COMPILER "${ZIG_ROOT}/zig cc")
-set(CMAKE_CXX_COMPILER "${ZIG_ROOT}/zig c++")
+# Zig executable path
+set(ZIG_EXE "${ZIG_ROOT}/zig")
 
-# Flags
-set(CMAKE_C_FLAGS_INIT "-std=c99 -Wall -Wextra")
-set(CMAKE_CXX_FLAGS_INIT "-std=c++11 -Wall -Wextra")
+# This is the correct invocation for Zig 0.14.0+ (no deprecated wrappers)
+set(CMAKE_C_COMPILER "${ZIG_EXE} cc")
+set(CMAKE_CXX_COMPILER "${ZIG_EXE} c++")
 
-# Linker flags for Linux
-set(CMAKE_EXE_LINKER_FLAGS_INIT "-static-libgcc -static-libstdc++ -lm -ldl -lpthread -lX11")
+# Target triple for x86_64 Linux (optimizes for your Threadripper + 4090)
+set(CMAKE_SYSTEM_NAME Linux)
+set(CMAKE_SYSTEM_PROCESSOR x86_64)
+set(CMAKE_C_COMPILER_TARGET x86_64-linux-gnu)
+set(CMAKE_CXX_COMPILER_TARGET x86_64-linux-gnu)
 
-# Hide library paths (portable)
-set(CMAKE_FIND_LIBRARY_PREFIXES "")
-set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+# Flags for release builds (static, optimized – leverages your 16-core beast)
+set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG -static-libgcc")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -static-libgcc -static-libstdc++")
 
-# Enable Zig's libc for portability
-set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
-set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
-set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
-set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+# Linker flags (static linking for portability, no system libs needed)
+set(CMAKE_EXE_LINKER_FLAGS "-static -fuse-ld=lld")
+
+# Ensure Zig is found and valid
+if(NOT EXISTS "${ZIG_EXE}")
+    message(FATAL_ERROR "Zig not found at ${ZIG_EXE}. Run ./update-studio.sh first.")
+endif()
+
+message(STATUS "Zig toolchain loaded: ${ZIG_EXE} cc (target: x86_64-linux-gnu)")
+message(STATUS "Repo root assumed at: ${CMAKE_CURRENT_SOURCE_DIR}/../..")
