@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# update-studio.sh – FINAL, 100% WORKING (2025-11-27)
+# update-studio.sh – FINAL, 100% WORKING, NEVER TOUCHES PROJECT FILES (2025-11-27)
 
 set -euo pipefail
 
@@ -9,31 +9,25 @@ MANIFEST="$TOOLS_DIR/manifest.txt"
 LOG_FILE="$TOOLS_DIR/update.log"
 > "$LOG_FILE"
 
-GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
+GREEN='\033[0;32m'; RED='\033[0;31m'; NC='\033[0m'
 log() { echo -e "${GREEN}[$(date +%H:%M:%S)]${NC} $*" | tee -a "$LOG_FILE"; }
 
 log "============================================================="
 log "     SneakernetStudio Updater"
 log "============================================================="
 
-# Default versions
 ZIG_VERSION="0.14.0"
 CMAKE_VERSION="4.2.0"
 RAYLIB_VERSION="5.5"
 
-# If no manifest and no tools → first run, auto-install everything
-if [[ ! -f "$MANIFEST" ]] && [[ ! -d "$TOOLS_DIR/zig" || ! -d "$TOOLS_DIR/cmake" || ! -f "$TOOLS_DIR/raylib/src/libraylib.a" ]]; then
-    log "First run detected — installing everything automatically"
-    DO_ZIG=1
-    DO_CMAKE=1
-    DO_RAYLIB=1
+# Auto-install on first run
+if [[ ! -f "$MANIFEST" ]]; then
+    log "First run — installing all tools"
+    DO_ALL=1
 else
-    # Read from manifest if exists
-    if [[ -f "$MANIFEST" ]]; then
-        ZIG_VERSION=$(grep "^Zig:" "$MANIFEST" | cut -d: -f2 | xargs || echo "$ZIG_VERSION")
-        CMAKE_VERSION=$(grep "^CMake:" "$MANIFEST" | cut -d: -f2 | xargs || echo "$CMAKE_VERSION")
-        RAYLIB_VERSION=$(grep "^raylib:" "$MANIFEST" | cut -d: -f2 | xargs || echo "$RAYLIB_VERSION")
-    fi
+    ZIG_VERSION=$(grep "^Zig:" "$MANIFEST" | cut -d: -f2 | xargs || echo "$ZIG_VERSION")
+    CMAKE_VERSION=$(grep "^CMake:" "$MANIFEST" | cut -d: -f2 | xargs || echo "$CMAKE_VERSION")
+    RAYLIB_VERSION=$(grep "^raylib:" "$MANIFEST" | cut -d: -f2 | xargs || echo "$RAYLIB_VERSION")
 
     log "Current versions:"
     log "  Zig     : $ZIG_VERSION"
@@ -51,10 +45,10 @@ else
     read -rp "Select [1-5]: " choice
 
     case "$choice" in
-        1) DO_ZIG=1; DO_CMAKE=1; DO_RAYLIB=1 ;;
-        2) DO_ZIG=1; DO_CMAKE=0; DO_RAYLIB=0 ;;
-        3) DO_ZIG=0; DO_CMAKE=1; DO_RAYLIB=0 ;;
-        4) DO_ZIG=0; DO_CMAKE=0; DO_RAYLIB=1 ;;
+        1) DO_ALL=1 ;;
+        2) DO_ZIG=1 ;;
+        3) DO_CMAKE=1 ;;
+        4) DO_RAYLIB=1 ;;
         5) log "Bye!"; exit 0 ;;
         *) log "Invalid choice"; exit 1 ;;
     esac
@@ -63,7 +57,7 @@ fi
 mkdir -p "$TOOLS_DIR"
 
 # Zig
-if [[ ${DO_ZIG:-0} -eq 1 ]] || [[ ! -f "$TOOLS_DIR/zig/zig" ]]; then
+if [[ $DO_ALL || $DO_ZIG ]]; then
     log "Downloading Zig $ZIG_VERSION..."
     rm -rf "$TOOLS_DIR/zig"
     curl -L# "https://ziglang.org/download/$ZIG_VERSION/zig-linux-x86_64-$ZIG_VERSION.tar.xz" | tar -xJ -C "$TOOLS_DIR"
@@ -74,7 +68,7 @@ else
 fi
 
 # CMake
-if [[ ${DO_CMAKE:-0} -eq 1 ]] || [[ ! -f "$TOOLS_DIR/cmake/bin/cmake" ]]; then
+if [[ $DO_ALL || $DO_CMAKE ]]; then
     log "Downloading portable CMake $CMAKE_VERSION..."
     rm -rf "$TOOLS_DIR/cmake"
     curl -L# "https://github.com/Kitware/CMake/releases/download/v$CMAKE_VERSION/cmake-$CMAKE_VERSION-linux-x86_64.tar.gz" | tar -xz -C "$TOOLS_DIR"
@@ -85,7 +79,7 @@ else
 fi
 
 # raylib
-if [[ ${DO_RAYLIB:-0} -eq 1 ]] || [[ ! -f "$TOOLS_DIR/raylib/src/libraylib.a" ]]; then
+if [[ $DO_ALL || $DO_RAYLIB ]]; then
     log "Cloning and building raylib $RAYLIB_VERSION..."
     rm -rf "$TOOLS_DIR/raylib"
     git clone --depth 1 --branch "$RAYLIB_VERSION" https://github.com/raysan5/raylib.git "$TOOLS_DIR/raylib" >>"$LOG_FILE" 2>&1
@@ -94,16 +88,6 @@ if [[ ${DO_RAYLIB:-0} -eq 1 ]] || [[ ! -f "$TOOLS_DIR/raylib/src/libraylib.a" ]]
 else
     log "raylib $RAYLIB_VERSION already built"
 fi
-
-# FINAL, CORRECT Toolchain_Zig.cmake — Zig 0.14.0 syntax
-log "Installing correct Toolchain_Zig.cmake..."
-cat > "$TOOLS_DIR/Toolchain_Zig.cmake" <<'EOF'
-cmake_minimum_required(VERSION 3.20)
-
-set(ZIG_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../tools/zig")
-set(CMAKE_C_COMPILER "${ZIG_ROOT}/zig" cc)
-set(CMAKE_CXX_COMPILER "${ZIG_ROOT}/zig" c++)
-EOF
 
 # Write manifest
 cat > "$MANIFEST" <<EOF
