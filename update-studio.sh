@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# update-studio.sh – FIXED ZIG/CMAKE/RAYLIB STACK, NO LINKER ERRORS (2025-11-27)
+# update-studio.sh – FIXED ZIG/CMAKE/RAYLIB STACK, STATIC LINKING (2025-11-27)
 
 set -euo pipefail
 
@@ -61,7 +61,7 @@ else
     log "raylib $RAYLIB_VERSION built"
 fi
 
-# Toolchain_Zig.cmake – disable depfile support (fixes linker error)
+# Toolchain_Zig.cmake – disable depfile + static flags
 log "Installing Toolchain_Zig.cmake..."
 cat > "$TOOLS_DIR/Toolchain_Zig.cmake" <<EOF
 cmake_minimum_required(VERSION 3.20)
@@ -77,6 +77,10 @@ set(CMAKE_CXX_COMPILER "\${ZIG_EXE}" c++)
 set(CMAKE_C_LINKER_DEPFILE_SUPPORTED FALSE)
 set(CMAKE_CXX_LINKER_DEPFILE_SUPPORTED FALSE)
 
+# Static linking flags (fixes __isoc23_* and main)
+set(CMAKE_C_FLAGS "\${CMAKE_C_FLAGS} -D_GNU_SOURCE -static -lc -lgcc")
+set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} -D_GNU_SOURCE -static -lc -lgcc")
+
 set(CMAKE_SYSTEM_NAME Linux)
 set(CMAKE_SYSTEM_PROCESSOR x86_64)
 set(CMAKE_C_COMPILER_TARGET x86_64-linux-gnu)
@@ -84,7 +88,6 @@ set(CMAKE_CXX_COMPILER_TARGET x86_64-linux-gnu)
 
 set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
-set(CMAKE_EXE_LINKER_FLAGS "-static -fuse-ld=lld")
 
 if(NOT EXISTS "\${ZIG_EXE}")
     message(FATAL_ERROR "Zig not found at \${ZIG_EXE}")
@@ -93,7 +96,7 @@ endif()
 message(STATUS "Zig compiler → \${ZIG_EXE} cc")
 EOF
 
-# Install correct CMakeLists.txt in all templates (original structure)
+# Install correct CMakeLists.txt in all templates
 log "Installing correct CMakeLists.txt in all templates..."
 for template in "$REPO_ROOT"/Templates/*; do
     if [[ -d "$template" ]]; then
