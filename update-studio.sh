@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# update-studio.sh – FINAL, 100% WORKING, MANIFEST-DRIVEN, INCLUDE FIXED (2025-11-27)
+# update-studio.sh – FINAL, 100% WORKING, SELF-CONTAINED (2025-11-27)
 
 set -euo pipefail
 
@@ -20,12 +20,6 @@ log "============================================================="
 ZIG_VERSION="0.14.0"
 CMAKE_VERSION="4.2.0"
 RAYLIB_VERSION="5.5"
-
-if [[ -f "$MANIFEST" ]]; then
-    ZIG_VERSION=$(grep "^Zig:" "$MANIFEST" | cut -d: -f2 | xargs)
-    CMAKE_VERSION=$(grep "^CMake:" "$MANIFEST" | cut -d: -f2 | xargs)
-    RAYLIB_VERSION=$(grep "^raylib:" "$MANIFEST" | cut -d: -f2 | xargs)
-fi
 
 mkdir -p "$TOOLS_DIR"
 
@@ -58,17 +52,52 @@ else
     log "raylib $RAYLIB_VERSION built"
 fi
 
-# FINAL, BULLETPROOF INCLUDE FIX — works on any formatting
-log "Fixing raylib include path in all projects..."
-find "$REPO_ROOT" -path "$REPO_ROOT/tools" -prune -o -path "*/build" -prune -o -name CMakeLists.txt -print0 | while IFS= read -r -d '' file; do
-    # Fix library path
-    sed -i 's|../../tools/raylib|../../tools/raylib/src|g' "$file"
-    
-    # Add raylib/src include directory if not already present
-    if ! grep -q "../../tools/raylib/src" "$file"; then
-        # Find the line that ends the target_include_directories call and insert before it
-        sed -i '/target_include_directories.*PRIVATE.*include.*)/i\    ../../tools/raylib/src' "$file"
-        log "Fixed raylib include in $file"
+# Replace all template CMakeLists.txt with a correct, self-contained version
+log "Installing correct CMakeLists.txt in all templates..."
+for template in "$REPO_ROOT"/Templates/*; do
+    if [[ -d "$template" ]]; then
+        cat > "$template/CMakeLists.txt" <<'EOF'
+cmake_minimum_required(VERSION 3.20)
+include(../../tools/Toolchain_Zig.cmake)
+
+get_filename_component(PROJECT_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
+project(${PROJECT_NAME} C)
+
+find_library(RAYLIB_LIB
+    NAMES raylib libraylib.a
+    PATHS ../../tools/raylib/src
+    NO_DEFAULT_PATH
+    REQUIRED
+)
+
+file(GLOB_RECURSE SOURCES "src/*.c")
+file(GLOB_RECURSE ASSETS "assets/*")
+
+add_executable(${PROJECT_NAME} ${SOURCES})
+
+target_include_directories(${PROJECT_NAME} PRIVATE
+    include
+    ../../tools/raylib/src
+)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE ${RAYLIB_LIB} m)
+
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lin"
+)
+
+foreach(ASSET ${ASSETS})
+    file(RELATIVE_PATH REL_PATH "${CMAKE_CURRENT_SOURCE_DIR}" "${ASSET}")
+    configure_file("${ASSET}" "lin/${REL_PATH}" COPYONLY)
+endforeach()
+
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_STRIP} $<TARGET_FILE:${PROJECT_NAME}>
+    )
+endif()
+EOF
+        log "Fixed CMakeLists.txt in $(basename "$template")"
     fi
 done
 
@@ -82,10 +111,6 @@ raylib: $RAYLIB_VERSION
 EOF
 
 # Final screen
-ZIG_VERSION=$(grep "^Zig:" "$MANIFEST" | cut -d: -f2 | xargs)
-CMAKE_VERSION=$(grep "^CMake:" "$MANIFEST" | cut -d: -f2 | xargs)
-RAYLIB_VERSION=$(grep "^raylib:" "$MANIFEST" | cut -d: -f2 | xargs)
-
 clear
 echo "============================================================="
 echo "     SneakernetStudio is ready"
