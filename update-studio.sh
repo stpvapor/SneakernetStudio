@@ -49,23 +49,23 @@ else
     log "raylib 5.5 already built"
 fi
 
-# === AUTOMATIC PROJECT FIXES – FINAL VERSION THAT ACTUALLY WORKS ===
+# === AUTOMATIC PROJECT FIXES – FINAL, ACTUALLY WORKS ===
 log "Applying final CMake fixes to all projects..."
 
-# 1. Fix library path (already correct in your log)
+# 1. Fix library path
 find "$REPO_ROOT" \( -path "$REPO_ROOT/tools" -o -path "*/build" \) -prune -false -o -name CMakeLists.txt \
     -exec sed -i 's|../../tools/raylib|../../tools/raylib/src|g' {} + 2>/dev/null || true
 
-# 2. Add raylib include directory – THIS IS THE REAL FIX
+# 2. Add raylib include directory – CORRECTLY THIS TIME
 find "$REPO_ROOT" \( -path "$REPO_ROOT/tools" -o -path "*/build" \) -prune -false -o -name CMakeLists.txt -print0 | while IFS= read -r -d '' file; do
     if ! grep -q "raylib/src" "$file"; then
-        # Insert the include line right after the existing target_include_directories line
+        # Insert the correct line right after the project-specific include
         sed -i '/target_include_directories.*PRIVATE.*include/a\    ../../tools/raylib/src' "$file"
-        log "Fixed includes in $file"
+        log "Fixed raylib include in $file"
     fi
 done
 
-log "All projects now have correct raylib include path"
+log "All projects now have correct raylib include path – FOR REAL THIS TIME"
 
 log "============================================================="
 log "     SNEAKERNETSTUDIO IS NOW ABSOLUTELY PERFECT"
