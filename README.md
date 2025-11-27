@@ -1,13 +1,10 @@
-# Sneakernet Studio — 1.0 “It Actually Works”
-
-A completely **offline, self-contained, portable** C + raylib + Zig game-jam / code-art template.  
+Sneakernet Studio — 1.0 “It Actually Works”
+A completely offline, self-contained, portable C + raylib + Zig game-jam / code-art template.
 Zero system dependencies. Zero boilerplate. Zero excuses.
-
 Drop a PNG, drop a .c file, rebuild — it just works.
-
 SneakernetStudio/
 ├── README.md
-├── update-studio.sh          ← (optional) pulls Zig/CMake/raylib once
+├── update-studio.sh          ← RUN THIS FIRST (installs Zig/CMake/raylib)
 ├── Templates/
 │   └── HelloWorld/           ← copy this folder to spawn a new game
 │       ├── main.c
@@ -21,29 +18,21 @@ SneakernetStudio/
 │           ├── utils.c       ← all utilities (text, lerp, dual shake)
 │           ├── entity.c      ← red ball
 │           └── bullet.c      ← VWSBrain.png with pixel-perfect alpha bounce
-└── tools/
-├── zig/                  ← Zig 0.14.0 (self-contained)
-├── cmake/                ← CMake 4.2.0 (self-contained)
-├── raylib/               ← raylib 5.5 (self-contained)
-└── Toolchain_Zig.cmake
-
-## How to Spawn a New Game (30 seconds)
-
-```bash
+└── tools/                    ← created by update-studio.sh
+First-Time Setup (once per machine or SD card)
+./update-studio.sh
+This downloads and installs Zig 0.14.0, CMake 4.2.0, and raylib 5.5 into tools/ — everything is now self-contained and offline-ready.
+How to Spawn a New Game (30 seconds)
 cd Projects
 cp -r ../Templates/HelloWorld my_killer_game
 cd my_killer_game
-
-# drop new .c files in src/
-# drop new .h files in include/
-# drop new PNGs in assets/textures/
-
+drop new .c files in src/
+drop new .h files in include/
+drop new PNGs in assets/textures/
 ./build.sh clean=yes        # first time or after big changes
 ./build/lin/my_killer_game  # run on Linux
-# or
+or
 build.bat                   # run on Windows
-
-That’s literally it. No CMake edits. No file lists. No path changes.
 Current Features (100% working)
 
 Pixel-perfect alpha collision (transparent parts don’t count)
@@ -57,23 +46,10 @@ Full asset copy to build/lin/assets/ for perfect SD-card portability
 Works on Linux (Hyprland/Arch) and Windows (chainload tested)
 
 Build Script Cheat Sheet
-  Linux
 ./build.sh clean=yes        # nuclear clean + rebuild (default: lin)
 ./build.sh                  # normal rebuild (lin)
 ./build.sh win              # cross-compile Windows .exe
 ./build.sh arm clean=yes    # clean + ARM build
-
-  Windows
-build.bat                   # normal Windows build
-build.bat clean=yes         # nuclear clean
-
-Utilities (drop-in, no edits)
-All live in include/utils.h + src/utils.c:
-
-DrawTextCenteredMulti("text\nmulti\nline", 30, LIGHTGRAY)
-LerpF, LerpVec2, EaseOutElastic, RandomFloat
-ScreenShakeTrigger(35.0f, 0.45f) + WindowShakeTrigger(25.0f, 0.4f)
-
 Want More?
 
 Add new .c → src/
@@ -88,4 +64,3 @@ Made with blood, sweat, and one very patient Grok.
 Now go make something that makes your monitor dance.
 — vapor, 27 November 2025
 (The day the brain finally bounced right) 🧠💥
-
