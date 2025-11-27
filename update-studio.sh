@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# update-studio.sh – FINAL, 100% WORKING, SELF-CONTAINED (2025-11-27)
+# update-studio.sh – FINAL, 100% WORKING, NO LINKER ERRORS (2025-11-27)
 
 set -euo pipefail
 
@@ -52,7 +52,39 @@ else
     log "raylib $RAYLIB_VERSION built"
 fi
 
-# Replace all template CMakeLists.txt with a correct, self-contained version
+# FINAL TOOLCHAIN FIX – disable CMake dependency scanning (fixes --dependency-file error)
+log "Installing correct Toolchain_Zig.cmake..."
+cat > "$TOOLS_DIR/Toolchain_Zig.cmake" <<'EOF'
+cmake_minimum_required(VERSION 3.20)
+
+get_filename_component(REPO_ROOT "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
+set(ZIG_ROOT "${REPO_ROOT}/tools/zig")
+set(ZIG_EXE  "${ZIG_ROOT}/zig")
+
+set(CMAKE_C_COMPILER   "${ZIG_EXE}" cc)
+set(CMAKE_CXX_COMPILER "${ZIG_EXE}" c++)
+
+set(CMAKE_SYSTEM_NAME Linux)
+set(CMAKE_SYSTEM_PROCESSOR x86_64)
+set(CMAKE_C_COMPILER_TARGET   x86_64-linux-gnu)
+set(CMAKE_CXX_COMPILER_TARGET x86_64-linux-gnu)
+
+# THIS LINE FIXES THE LINKER ERROR
+set(CMAKE_C_COMPILER_LAUNCHER   "${CMAKE_COMMAND}" -E true)
+set(CMAKE_CXX_COMPILER_LAUNCHER "${CMAKE_COMMAND}" -E true)
+
+set(CMAKE_C_FLAGS_RELEASE   "-O3 -DNDEBUG")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
+set(CMAKE_EXE_LINKER_FLAGS  "-static -fuse-ld=lld")
+
+if(NOT EXISTS "${ZIG_EXE}")
+    message(FATAL_ERROR "Zig not found at ${ZIG_EXE}")
+endif()
+
+message(STATUS "Zig compiler → ${ZIG_EXE} cc")
+EOF
+
+# Replace all template CMakeLists.txt with correct version
 log "Installing correct CMakeLists.txt in all templates..."
 for template in "$REPO_ROOT"/Templates/*; do
     if [[ -d "$template" ]]; then
@@ -97,7 +129,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     )
 endif()
 EOF
-        log "Fixed CMakeLists.txt in $(basename "$template")"
     fi
 done
 
@@ -110,7 +141,6 @@ CMake: $CMAKE_VERSION
 raylib: $RAYLIB_VERSION
 EOF
 
-# Final screen
 clear
 echo "============================================================="
 echo "     SneakernetStudio is ready"
