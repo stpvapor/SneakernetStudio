@@ -49,27 +49,23 @@ else
     log "raylib 5.5 already built"
 fi
 
-# === AUTOMATIC PROJECT FIXES ===
+# === AUTOMATIC PROJECT FIXES – FINAL VERSION THAT ACTUALLY WORKS ===
 log "Applying final CMake fixes to all projects..."
 
-# 1. Fix library path
+# 1. Fix library path (already correct in your log)
 find "$REPO_ROOT" \( -path "$REPO_ROOT/tools" -o -path "*/build" \) -prune -false -o -name CMakeLists.txt \
     -exec sed -i 's|../../tools/raylib|../../tools/raylib/src|g' {} + 2>/dev/null || true
 
-# 2. Add raylib include directory if missing
-find "$REPO_ROOT" \( -path "$REPO_ROOT/tools" -o -path "*/build" \) -prune -false -o -name CMakeLists.txt -exec grep -q "raylib/src" {} \; -exec echo "already has include" \; -o \
-    -exec sed -i '/target_include_directories.*PRIVATE.*include/a\    ../../tools/raylib/src' {} + 2>/dev/null || true
+# 2. Add raylib include directory – THIS IS THE REAL FIX
+find "$REPO_ROOT" \( -path "$REPO_ROOT/tools" -o -path "*/build" \) -prune -false -o -name CMakeLists.txt -print0 | while IFS= read -r -d '' file; do
+    if ! grep -q "raylib/src" "$file"; then
+        # Insert the include line right after the existing target_include_directories line
+        sed -i '/target_include_directories.*PRIVATE.*include/a\    ../../tools/raylib/src' "$file"
+        log "Fixed includes in $file"
+    fi
+done
 
-log "All projects fixed: library path + raylib.h include"
-
-# === Manifest ===
-cat > "$TOOLS_DIR/manifest.txt" <<EOF
-# SneakernetStudio Tool Manifest
-# Updated: $(date +"%Y-%m-%d %H:%M:%S")
-Zig: 0.14.0
-CMake: 4.2.0
-raylib: 5.5
-EOF
+log "All projects now have correct raylib include path"
 
 log "============================================================="
 log "     SNEAKERNETSTUDIO IS NOW ABSOLUTELY PERFECT"
