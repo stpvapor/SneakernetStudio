@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# update-studio.sh – FIXED ZIG/CMAKE/RAYLIB STACK, STATIC LINKING (2025-11-27)
+# update-studio.sh – FIXED ZIG/CMAKE/RAYLIB STACK, STATIC GLIBC (2025-11-27)
 
 set -euo pipefail
 
@@ -61,7 +61,7 @@ else
     log "raylib $RAYLIB_VERSION built"
 fi
 
-# Toolchain_Zig.cmake – disable depfile + static flags
+# Toolchain_Zig.cmake – override link command + glibc flags
 log "Installing Toolchain_Zig.cmake..."
 cat > "$TOOLS_DIR/Toolchain_Zig.cmake" <<EOF
 cmake_minimum_required(VERSION 3.20)
@@ -73,21 +73,21 @@ set(ZIG_EXE  "\${ZIG_ROOT}/zig")
 set(CMAKE_C_COMPILER   "\${ZIG_EXE}" cc)
 set(CMAKE_CXX_COMPILER "\${ZIG_EXE}" c++)
 
-# Disable depfile support (fixes --dependency-file linker error)
+# Disable depfile (fixes --dependency-file)
 set(CMAKE_C_LINKER_DEPFILE_SUPPORTED FALSE)
 set(CMAKE_CXX_LINKER_DEPFILE_SUPPORTED FALSE)
 
-# Static linking flags (fixes __isoc23_* and main)
-set(CMAKE_C_FLAGS "\${CMAKE_C_FLAGS} -D_GNU_SOURCE -static -lc -lgcc")
-set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} -D_GNU_SOURCE -static -lc -lgcc")
+# Override link command to avoid depfile injection
+set(CMAKE_C_LINK_EXECUTABLE "\${ZIG_EXE} cc <FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES> -D_GNU_SOURCE -lc -lgcc")
 
 set(CMAKE_SYSTEM_NAME Linux)
 set(CMAKE_SYSTEM_PROCESSOR x86_64)
 set(CMAKE_C_COMPILER_TARGET x86_64-linux-gnu)
 set(CMAKE_CXX_COMPILER_TARGET x86_64-linux-gnu)
 
-set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
+set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG -static")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -static")
+set(CMAKE_EXE_LINKER_FLAGS "-fuse-ld=lld")
 
 if(NOT EXISTS "\${ZIG_EXE}")
     message(FATAL_ERROR "Zig not found at \${ZIG_EXE}")
