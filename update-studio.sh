@@ -22,7 +22,7 @@ CMAKE_VERSION="4.2.0"
 RAYLIB_VERSION="5.5"
 
 if [[ -f "$MANIFEST" ]]; then
-    ZIG_VERSION-$(grep "^Zig:" "$MANIFEST" | cut -d: -f2 | xargs)
+    ZIG_VERSION=$(grep "^Zig:" "$MANIFEST" | cut -d: -f2 | xargs)
     CMAKE_VERSION=$(grep "^CMake:" "$MANIFEST" | cut -d: -f2 | xargs)
     RAYLIB_VERSION=$(grep "^raylib:" "$MANIFEST" | cut -d: -f2 | xargs)
 fi
@@ -58,19 +58,17 @@ else
     log "raylib $RAYLIB_VERSION built"
 fi
 
-# FINAL, BULLETPROOF INCLUDE FIX
-log "Fixing raylib.h include in all projects..."
+# FINAL, BULLETPROOF INCLUDE FIX — works on any formatting
+log "Fixing raylib include path in all projects..."
 find "$REPO_ROOT" -path "$REPO_ROOT/tools" -prune -o -path "*/build" -prune -o -name CMakeLists.txt -print0 | while IFS= read -r -d '' file; do
     # Fix library path
     sed -i 's|../../tools/raylib|../../tools/raylib/src|g' "$file"
     
-    # Add raylib/src include inside target_include_directories if missing
+    # Add raylib/src include directory if not already present
     if ! grep -q "../../tools/raylib/src" "$file"; then
-        # Find the line with target_include_directories and PRIVATE include
-        if grep -q "target_include_directories.*PRIVATE.*include" "$file"; then
-            sed -i '/target_include_directories.*PRIVATE.*include/a\    ../../tools/raylib/src' "$file"
-            log "Added raylib/src include to $file"
-        fi
+        # Find the line that ends the target_include_directories call and insert before it
+        sed -i '/target_include_directories.*PRIVATE.*include.*)/i\    ../../tools/raylib/src' "$file"
+        log "Fixed raylib include in $file"
     fi
 done
 
@@ -83,7 +81,7 @@ CMake: $CMAKE_VERSION
 raylib: $RAYLIB_VERSION
 EOF
 
-# Final screen with manifest versions
+# Final screen
 ZIG_VERSION=$(grep "^Zig:" "$MANIFEST" | cut -d: -f2 | xargs)
 CMAKE_VERSION=$(grep "^CMake:" "$MANIFEST" | cut -d: -f2 | xargs)
 RAYLIB_VERSION=$(grep "^raylib:" "$MANIFEST" | cut -d: -f2 | xargs)
