@@ -1,6 +1,7 @@
 #include "utils.h"
 #include <raylib.h>
 #include <math.h>
+#include <string.h>   // <-- for strchr in text splitter
 
 static ScreenShake screen_shake = {0};
 static WindowShake window_shake = {0};
@@ -47,7 +48,7 @@ float RandomFloat(float min, float max) {
     return min + ((float)GetRandomValue(0, 10000) / 10000.0f) * (max - min);
 }
 
-/* SCREEN SHAKE (camera) */
+/* SCREEN SHAKE */
 void ScreenShakeTrigger(float intensity, float duration) {
     screen_shake.intensity = intensity;
     screen_shake.duration = duration;
@@ -79,7 +80,7 @@ void ScreenShakeEnd(void) {
     EndMode2D();
 }
 
-/* WINDOW SHAKE (OS window) */
+/* WINDOW SHAKE */
 void WindowShakeTrigger(float intensity, float duration) {
     window_shake.intensity = intensity;
     window_shake.duration = duration;
