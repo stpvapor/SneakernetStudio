@@ -1,13 +1,10 @@
 cmake_minimum_required(VERSION 3.20)
 
-set(ZIG_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../tools/zig")
-set(CMAKE_C_COMPILER "${ZIG_ROOT}/zig" cc)
-set(CMAKE_CXX_COMPILER "${ZIG_ROOT}/zig" c++)
+set(CMAKE_C_COMPILER "${CMAKE_CURRENT_SOURCE_DIR}/../../tools/zig/zig" cc)
+set(CMAKE_CXX_COMPILER "${CMAKE_CURRENT_SOURCE_DIR}/../../tools/zig/zig" c++)
 
-# Skip compiler test (fixes duplicate main)
 set(CMAKE_C_COMPILER_FORCED TRUE)
 set(CMAKE_CXX_COMPILER_FORCED TRUE)
 
-# Disable depfile (fixes --dependency-file if it appears)
 set(CMAKE_C_LINKER_DEPFILE_SUPPORTED FALSE)
 set(CMAKE_CXX_LINKER_DEPFILE_SUPPORTED FALSE)
