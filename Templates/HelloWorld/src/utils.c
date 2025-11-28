@@ -6,38 +6,35 @@
 static ScreenShake screen_shake = {0};
 static WindowShake window_shake = {0};
 
-/* TEXT — multi-line centered — THE ONE THAT NEVER GHOSTS */
 void DrawTextCenteredMulti(const char *text, int fontSize, Color color) {
     char buffer[1024];
     strncpy(buffer, text, sizeof(buffer) - 1);
     buffer[sizeof(buffer) - 1] = '\0';
 
-    // Null-terminate each line
-    for (char *p = buffer; *p; p++) {
-        if (*p == '\n') *p = '\0';
-    }
-
-    // Count lines and find longest
-    int count = 0;
-    int maxWidth = 0;
+    // Replace \n with \0 to split into separate strings
+    int lineCount = 0;
     const char *lines[64];
-    lines[count++] = buffer;
+    lines[lineCount++] = buffer;
 
-    for (char *p = buffer; *p; ) {
-        if (*(p++) == '\0' && *p) {
-            lines[count++] = p;
+    for (char *p = buffer; *p; p++) {
+        if (*p == '\n') {
+            *p = '\0';
+            if (*(p + 1)) lines[lineCount++] = p + 1;
         }
     }
 
-    for (int i = 0; i < count; i++) {
+    // Measure longest line
+    int maxWidth = 0;
+    for (int i = 0; i < lineCount; i++) {
         int w = MeasureText(lines[i], fontSize);
         if (w > maxWidth) maxWidth = w;
     }
 
-    int totalHeight = count * fontSize;
+    int totalHeight = lineCount * fontSize;
     int startY = (GetScreenHeight() - totalHeight) / 2;
 
-    for (int i = 0; i < count; i++) {
+    // Draw each line centered
+    for (int i = 0; i < lineCount; i++) {
         int w = MeasureText(lines[i], fontSize);
         int x = (GetScreenWidth() - w) / 2;
         DrawText(lines[i], x, startY + i * fontSize, fontSize, color);
