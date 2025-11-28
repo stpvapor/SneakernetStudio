@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 
-set(CMAKE_C_COMPILER "${CMAKE_CURRENT_SOURCE_DIR}/../../tools/zig/zig" cc)
-set(CMAKE_CXX_COMPILER "${CMAKE_CURRENT_SOURCE_DIR}/../../tools/zig/zig" c++)
+set(CMAKE_C_COMPILER "${CMAKE_CURRENT_SOURCE_DIR}/../../tools/zig/zig cc")
+set(CMAKE_CXX_COMPILER "${CMAKE_CURRENT_SOURCE_DIR}/../../tools/zig/zig c++")
 
 set(CMAKE_C_COMPILER_FORCED TRUE)
 set(CMAKE_CXX_COMPILER_FORCED TRUE)
