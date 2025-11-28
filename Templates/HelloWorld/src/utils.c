@@ -1,10 +1,11 @@
 #include "utils.h"
+#include <raylib.h>
 #include <math.h>
 
 static ScreenShake screen_shake = {0};
 static WindowShake window_shake = {0};
 
-/* TEXT */
+/* TEXT — multi-line centered */
 void DrawTextCenteredMulti(const char *text, int fontSize, Color color) {
     int count = 0;
     const char *lines[64];
@@ -46,7 +47,7 @@ float RandomFloat(float min, float max) {
     return min + ((float)GetRandomValue(0, 10000) / 10000.0f) * (max - min);
 }
 
-/* SCREEN SHAKE */
+/* SCREEN SHAKE (camera) */
 void ScreenShakeTrigger(float intensity, float duration) {
     screen_shake.intensity = intensity;
     screen_shake.duration = duration;
@@ -78,7 +79,7 @@ void ScreenShakeEnd(void) {
     EndMode2D();
 }
 
-/* WINDOW SHAKE */
+/* WINDOW SHAKE (OS window) */
 void WindowShakeTrigger(float intensity, float duration) {
     window_shake.intensity = intensity;
     window_shake.duration = duration;
