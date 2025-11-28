@@ -11,7 +11,7 @@ add_executable(${PROJECT_NAME} main.c ${SOURCES})
 set(RAYLIB_PATH "${CMAKE_SOURCE_DIR}/../../tools/raylib")
 target_include_directories(${PROJECT_NAME} PRIVATE "${RAYLIB_PATH}/src" include)
 
-# lib is in src/
+# lib is in src/ — this is where update-studio.sh puts it
 target_link_libraries(${PROJECT_NAME} PRIVATE "${RAYLIB_PATH}/src/libraylib.a" m dl pthread X11)
 
 # Copy assets
