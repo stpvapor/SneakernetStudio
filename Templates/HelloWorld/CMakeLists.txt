@@ -1,20 +1,24 @@
-cmake_minimum_required(VERSION 3.20)
-include(../../tools/Toolchain_Zig.cmake)
-
+cmake_minimum_required(VERSION 3.10)
 project(HelloWorld C)
 
-find_library(RAYLIB_LIB
-    NAMES raylib libraylib.a
-    PATHS ../../tools/raylib/src
-    NO_DEFAULT_PATH
-    REQUIRED
-)
+set(CMAKE_TOOLCHAIN_FILE "${CMAKE_SOURCE_DIR}/../../tools/Toolchain_Zig.cmake")
+set(CMAKE_LINK_DEPENDS_NO_SHARED ON)
 
-file(GLOB_RECURSE SOURCES "*.c" "src/*.c")
+# Crawl src for all .c
+file(GLOB SOURCES "src/*.c")
 
-add_executable(HelloWorld ${SOURCES})
+# Add executable (main.c + SOURCES, no duplicates)
+add_executable(${PROJECT_NAME} main.c ${SOURCES})
 
-target_include_directories(HelloWorld PRIVATE include ../../tools/raylib/src)
-target_link_libraries(HelloWorld PRIVATE ${RAYLIB_LIB} m)
+# Local raylib and project include
+set(RAYLIB_PATH "${CMAKE_SOURCE_DIR}/../../tools/raylib")
+target_include_directories(${PROJECT_NAME} PRIVATE "${RAYLIB_PATH}/include" include)
 
-set_target_properties(HelloWorld PROPERTIES RUNTIME_OUTPUT_DIRECTORY lin)
+# Link raylib
+target_link_libraries(${PROJECT_NAME} PRIVATE "${RAYLIB_PATH}/lib/libraylib.a" m dl pthread X11)
+
+# Auto-copy assets to build (portable bundle)
+file(GLOB_RECURSE ASSETS "assets/*")
+foreach(ASSET ${ASSETS})
+    configure_file(${ASSET} ${ASSET} COPYONLY)
+endforeach()
