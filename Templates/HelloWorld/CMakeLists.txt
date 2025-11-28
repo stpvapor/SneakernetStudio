@@ -4,11 +4,12 @@ project(HelloWorld C)
 set(CMAKE_TOOLCHAIN_FILE "${CMAKE_SOURCE_DIR}/../../tools/Toolchain_Zig.cmake")
 set(CMAKE_LINK_DEPENDS_NO_SHARED ON)
 
-# GLOB everything in src/ — user can drop any .c file
+# GLOB all src/*.c except utils.c (to break circularity)
 file(GLOB SOURCES "src/*.c")
+list(FILTER SOURCES EXCLUDE REGEX "utils.c")
 
-# main.c is separate — never in GLOB
-add_executable(${PROJECT_NAME} main.c ${SOURCES})
+# Explicitly add utils.c after main.c
+add_executable(${PROJECT_NAME} main.c src/utils.c ${SOURCES})
 
 # raylib headers are in tools/raylib/src
 set(RAYLIB_PATH "${CMAKE_SOURCE_DIR}/../../tools/raylib")
@@ -22,6 +23,3 @@ file(GLOB_RECURSE ASSETS "assets/*")
 foreach(ASSET ${ASSETS})
     configure_file(${ASSET} ${ASSET} COPYONLY)
 endforeach()
-
-# Critical fix: force main.c to compile first so utils.h is seen before utils.c
-set_source_files_properties(main.c PROPERTIES COMPILE_FLAGS "-include utils.h")
