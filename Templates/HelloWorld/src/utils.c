@@ -1,25 +1,17 @@
 #include "utils.h"
+#include <raylib.h>   // <-- THIS WAS MISSING
 #include <math.h>
-#include <string.h>
 
 static ScreenShake screen_shake = {0};
 static WindowShake window_shake = {0};
 
-/* TEXT — multi-line centered (fixed) */
+/* TEXT — multi-line centered */
 void DrawTextCenteredMulti(const char *text, int fontSize, Color color) {
-    char temp[1024];
-    strncpy(temp, text, sizeof(temp) - 1);
-    temp[sizeof(temp) - 1] = '\0';
-
     int count = 0;
     const char *lines[64];
-    lines[count++] = temp;
-
-    for (char *p = temp; *p; p++) {
-        if (*p == '\n') {
-            *p = '\0';
-            lines[count++] = p + 1;
-        }
+    lines[count++] = text;
+    for (int i = 0; text[i]; i++) {
+        if (text[i] == '\n') lines[count++] = text + i + 1;
     }
 
     int maxWidth = 0;
