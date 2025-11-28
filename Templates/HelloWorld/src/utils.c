@@ -1,6 +1,6 @@
 #include "utils.h"
 #include <math.h>
-#include <string.h>   // <-- for strchr in text splitter
+#include <string.h>
 
 static ScreenShake screen_shake = {0};
 static WindowShake window_shake = {0};
