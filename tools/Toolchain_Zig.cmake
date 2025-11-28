@@ -14,3 +14,7 @@ add_compile_definitions(_GNU_SOURCE)
 # Skip compiler test (fixes duplicate main)
 set(CMAKE_C_COMPILER_FORCED TRUE)
 set(CMAKE_CXX_COMPILER_FORCED TRUE)
+
+# Skip compiler test — this is the only thing that works with Zig 0.14.0 + Make
+set(CMAKE_C_COMPILER_FORCED TRUE)
+set(CMAKE_CXX_COMPILER_FORCED TRUE)
