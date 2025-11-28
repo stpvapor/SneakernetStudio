@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # update-studio.sh – FINAL, 100% WORKING, NEVER TOUCHES PROJECT FILES (2025-11-27)
-
+# Preserve Toolchain_Zig.cmake if it exists
+[ -f "$TOOLS_DIR/Toolchain_Zig.cmake" ] && cp "$TOOLS_DIR/Toolchain_Zig.cmake" "$TOOLS_DIR/Toolchain_Zig.cmake.bak"
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -88,7 +89,7 @@ if [[ $DO_ALL || $DO_RAYLIB ]]; then
 else
     log "raylib $RAYLIB_VERSION already built"
 fi
-
+[ -f "$TOOLS_DIR/Toolchain_Zig.cmake.bak" ] && mv "$TOOLS_DIR/Toolchain_Zig.cmake.bak" "$TOOLS_DIR/Toolchain_Zig.cmake"
 # Write manifest
 cat > "$MANIFEST" <<EOF
 # SneakernetStudio Tool Manifest
