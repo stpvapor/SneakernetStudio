@@ -7,7 +7,7 @@ set(CMAKE_LINK_DEPENDS_NO_SHARED ON)
 file(GLOB SOURCES "src/*.c")
 add_executable(${PROJECT_NAME} main.c ${SOURCES})
 
-# raylib headers are in tools/raylib/src — NOT in include/
+# raylib headers are in tools/raylib/src — NOT include/
 set(RAYLIB_PATH "${CMAKE_SOURCE_DIR}/../../tools/raylib")
 target_include_directories(${PROJECT_NAME} PRIVATE "${RAYLIB_PATH}/src" include)
 
