@@ -1,25 +1,25 @@
 #!/bin/bash
 set -e
 
-PROJECT_ROOT="$(pwd)"
-TOOLS_DIR="../../tools"
-BUILD_DIR="build"
+# Resolve project root from the script location — works from any folder
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TOOLS_DIR="$PROJECT_ROOT/../../tools"
+BUILD_DIR="$PROJECT_ROOT/build"
 TARGET="${1:-lin}"
-CLEAN="${2:-no}"
 
-# Clean if requested
-if [ "$CLEAN" = "yes" ]; then
-    echo "Cleaning build directory and Zig cache..."
-    rm -rf "$BUILD_DIR" .zig-cache zig-out
-fi
+# ALWAYS full clean — no stale CMake cache EVER
+echo "=== FULL CLEAN (removing $BUILD_DIR/$TARGET) ==="
+rm -rf "$BUILD_DIR/$TARGET"
 
+# Create fresh build directory
 TARGET_DIR="$BUILD_DIR/$TARGET"
 mkdir -p "$TARGET_DIR"
 cd "$TARGET_DIR"
 
-# Force Zig cache inside this build folder
+# Zig cache lives inside this build folder
 export ZIG_GLOBAL_CACHE_DIR="$PWD/.zig-cache"
 
+# Toolchain is relative to project root
 TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=$TOOLS_DIR/Toolchain_Zig.cmake"
 
 case "$TARGET" in
@@ -31,4 +31,5 @@ esac
 cmake "$PROJECT_ROOT" $TOOLCHAIN $ZIG_TARGET
 make -j$(nproc)
 
-echo "Build complete: $TARGET_DIR/HelloWorld (target: $TARGET)"
+echo "Build complete: $TARGET_DIR/HelloWorld"
+echo "Run with: ./$TARGET_DIR/HelloWorld"
