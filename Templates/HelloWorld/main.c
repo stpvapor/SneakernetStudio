@@ -1,7 +1,7 @@
 #include <raylib.h>
 #include "entity.h"
 #include "bullet.h"
-#include "utils.h"
+#include "include/utils.h"
 
 int main(void) {
     const int screenWidth = 800;
