@@ -4,6 +4,8 @@ REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 
 if [[ "$1" == "clean=yes" ]]; then
     rm -rf build .zig-cache
+rm -rf build/lin/CMakeFiles
+
 fi
 
 mkdir -p build/lin
