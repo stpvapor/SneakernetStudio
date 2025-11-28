@@ -7,3 +7,7 @@ set(CMAKE_CXX_COMPILER "${ZIG_ROOT}/zig" c++)
 set(CMAKE_C_COMPILER_FORCED TRUE)
 set(CMAKE_CXX_COMPILER_FORCED TRUE)
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+
+# Skip compiler test — this is the only thing that works with Zig 0.14.0 + Make
+set(CMAKE_C_COMPILER_WORKS 1)
+set(CMAKE_CXX_COMPILER_WORKS 1)
