@@ -7,6 +7,8 @@ if [[ "$1" == "clean=yes" ]]; then
 fi
 
 mkdir -p build/lin
+rm -f build/lin/CMakeCache.txt
+
 
 cmake -S . -B build/lin -DCMAKE_TOOLCHAIN_FILE="$REPO_ROOT/tools/Toolchain_Zig.cmake" -DCMAKE_BUILD_TYPE=Debug
 
