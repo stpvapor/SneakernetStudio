@@ -79,16 +79,45 @@ else
     log "CMake $CMAKE_VERSION already present"
 fi
 
-# raylib
-if [[ $DO_ALL || $DO_RAYLIB ]]; then
-    log "Cloning and building raylib $RAYLIB_VERSION..."
+install_raylib() {
+    local force="$1"
+    local raylib_ver="$FINAL_RAYLIB"
+    [ "$raylib_ver" = "not installed" ] && raylib_ver="5.5"
+
+    if [ $ONLINE -eq 1 ]; then
+        echo "[raylib] Checking for latest version..."
+        latest_raylib="5.5"  # hard-code for now (or fetch from GitHub API)
+
+        if [ -z "$force" ] && [ -f "$TOOLS_DIR/raylib/src/libraylib.a" ]; then
+            echo "[raylib] libraylib.a already exists — skipping"
+            FINAL_RAYLIB="$latest_raylib"
+            return
+        fi
+    elif [ ! -f "$TOOLS_DIR/raylib/src/libraylib.a" ]; then
+        echo "[raylib] Offline and no libraylib.a — cannot continue"
+        FINAL_RAYLIB="failed"
+        return
+    else
+        echo "[raylib] Offline — using existing build"
+        FINAL_RAYLIB="$raylib_ver"
+        return
+    fi
+
+    echo "[raylib] Installing version $latest_raylib..."
     rm -rf "$TOOLS_DIR/raylib"
-    git clone --depth 1 --branch "$RAYLIB_VERSION" https://github.com/raysan5/raylib.git "$TOOLS_DIR/raylib" >>"$LOG_FILE" 2>&1
-    make -C "$TOOLS_DIR/raylib/src" -j$(nproc) PLATFORM=PLATFORM_DESKTOP SHARED=0 CLEAN=1 >>"$LOG_FILE" 2>&1
-    log "raylib $RAYLIB_VERSION built – libraylib.a ready"
-else
-    log "raylib $RAYLIB_VERSION already built"
-fi
+    git clone --depth 1 --branch $latest_raylib https://github.com/raysan5/raylib.git "$TOOLS_DIR/raylib" >>"$LOG_FILE" 2>&1
+
+    cd "$TOOLS_DIR/raylib/src"
+    make PLATFORM=PLATFORM_DESKTOP RAYLIB_LIBTYPE=STATIC -j$(nproc) >>"$LOG_FILE" 2>&1
+
+    if [ -f libraylib.a ]; then
+        FINAL_RAYLIB="$latest_raylib"
+        echo "[raylib] Installation successful: $FINAL_RAYLIB" | tee -a "$LOG_FILE"
+    else
+        FINAL_RAYLIB="failed"
+        echo "[raylib] Build failed — no libraylib.a" | tee -a "$LOG_FILE"
+    fi
+}
 [ -f "$TOOLS_DIR/Toolchain_Zig.cmake.bak" ] && mv "$TOOLS_DIR/Toolchain_Zig.cmake.bak" "$TOOLS_DIR/Toolchain_Zig.cmake"
 # Write manifest
 cat > "$MANIFEST" <<EOF
