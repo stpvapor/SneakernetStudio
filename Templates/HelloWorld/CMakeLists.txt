@@ -14,8 +14,8 @@ target_include_directories(${PROJECT_NAME} PRIVATE "${RAYLIB_PATH}/src" include)
 # lib is in src/
 target_link_libraries(${PROJECT_NAME} PRIVATE "${RAYLIB_PATH}/src/libraylib.a" m dl pthread X11)
 
-# Copy assets
-file(GLOB_RECURSE ASSETS "assets/*")
+# Copy assets (only from assets/ — not src/include)
+file(GLOB_RECURSE ASSETS "${CMAKE_SOURCE_DIR}/assets/*")
 foreach(ASSET ${ASSETS})
-    configure_file(${ASSET} ${ASSET} COPYONLY)
+    file(COPY ${ASSET} DESTINATION "${CMAKE_BINARY_DIR}/assets")
 endforeach()
