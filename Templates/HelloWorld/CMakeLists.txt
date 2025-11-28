@@ -7,14 +7,14 @@ set(CMAKE_LINK_DEPENDS_NO_SHARED ON)
 file(GLOB SOURCES "src/*.c")
 add_executable(${PROJECT_NAME} main.c ${SOURCES})
 
-# raylib is in tools/raylib/src/ — this is where the updater puts libraylib.a
+# raylib headers are in tools/raylib/src — NOT in include/
 set(RAYLIB_PATH "${CMAKE_SOURCE_DIR}/../../tools/raylib")
-target_include_directories(${PROJECT_NAME} PRIVATE "${RAYLIB_PATH}/include" include)
+target_include_directories(${PROJECT_NAME} PRIVATE "${RAYLIB_PATH}/src" include)
 
-# Correct path to the static library
+# Static lib is in src/
 target_link_libraries(${PROJECT_NAME} PRIVATE "${RAYLIB_PATH}/src/libraylib.a" m dl pthread X11)
 
-# Copy assets to build (portable)
+# Copy assets
 file(GLOB_RECURSE ASSETS "assets/*")
 foreach(ASSET ${ASSETS})
     configure_file(${ASSET} ${ASSET} COPYONLY)
