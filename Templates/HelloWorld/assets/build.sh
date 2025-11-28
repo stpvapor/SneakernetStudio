@@ -12,6 +12,9 @@ mkdir -p build/lin
     -S . \
     -B build/lin \
     -DCMAKE_TOOLCHAIN_FILE=../../tools/Toolchain_Zig.cmake -DCMAKE_C_COMPILER_FORCED=1 -DCMAKE_CXX_COMPILER_FORCED=1 -DCMAKE_TOOLCHAIN_FILE="$REPO_ROOT/tools/Toolchain_Zig.cmake" \
+    -DCMAKE_C_COMPILER_FORCED=1 
+    -DCMAKE_CXX_COMPILER_FORCED=1 
+
     -DCMAKE_C_COMPILER_FORCED=1 \
     -DCMAKE_CXX_COMPILER_FORCED=1 \
     -DCMAKE_BUILD_TYPE=Debug
