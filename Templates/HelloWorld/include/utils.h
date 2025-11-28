@@ -5,12 +5,6 @@
 
 void DrawTextCenteredMulti(const char *text, int fontSize, Color color);
 
-/* MATH */
-float LerpF(float a, float b, float t);
-Vector2 LerpVec2(Vector2 a, Vector2 b, float t);
-float EaseOutElastic(float t);
-float RandomFloat(float min, float max);
-
 /* SCREEN SHAKE (camera) */
 typedef struct {
     float intensity;

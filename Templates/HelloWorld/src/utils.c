@@ -1,11 +1,11 @@
 #include "utils.h"
-#include <raylib.h>   // <-- THIS WAS MISSING
+#include <raylib.h>
 #include <math.h>
 
 static ScreenShake screen_shake = {0};
 static WindowShake window_shake = {0};
 
-/* TEXT — multi-line centered */
+/* TEXT */
 void DrawTextCenteredMulti(const char *text, int fontSize, Color color) {
     int count = 0;
     const char *lines[64];
@@ -31,22 +31,6 @@ void DrawTextCenteredMulti(const char *text, int fontSize, Color color) {
     }
 }
 
-/* MATH */
-float LerpF(float a, float b, float t) { return a + (b - a) * t; }
-
-Vector2 LerpVec2(Vector2 a, Vector2 b, float t) {
-    return (Vector2){ LerpF(a.x, b.x, t), LerpF(a.y, b.y, t) };
-}
-
-float EaseOutElastic(float t) {
-    const float c4 = (2.0f * 3.14159265359f) / 3.0f;
-    return t == 0 ? 0 : t == 1 ? 1 : powf(2, -10 * t) * sinf((t * 10 - 0.75f) * c4) + 1;
-}
-
-float RandomFloat(float min, float max) {
-    return min + ((float)GetRandomValue(0, 10000) / 10000.0f) * (max - min);
-}
-
 /* SCREEN SHAKE */
 void ScreenShakeTrigger(float intensity, float duration) {
     screen_shake.intensity = intensity;
@@ -58,9 +42,9 @@ void ScreenShakeUpdate(float dt) {
     if (screen_shake.timer > 0) {
         screen_shake.timer -= dt;
         float t = screen_shake.timer / screen_shake.duration;
-        float strength = screen_shake.intensity * EaseOutElastic(1.0f - t);
-        screen_shake.offset.x = RandomFloat(-strength, strength);
-        screen_shake.offset.y = RandomFloat(-strength, strength);
+        float strength = screen_shake.intensity * (1.0f - t) * (1.0f - t);
+        screen_shake.offset.x = (float)(GetRandomValue(-1000, 1000) / 1000.0f * strength);
+        screen_shake.offset.y = (float)(GetRandomValue(-1000, 1000) / 1000.0f * strength);
     } else {
         screen_shake.offset = (Vector2){0, 0};
     }
@@ -90,11 +74,11 @@ void WindowShakeTrigger(float intensity, float duration) {
 
 void WindowShakeUpdate(float dt) {
     if (window_shake.timer > 0) {
-        window_shake.timer -= dt;
+        window_shake.timer -= GetFrameTime();
         float t = window_shake.timer / window_shake.duration;
         float strength = window_shake.intensity * (1.0f - t) * (1.0f - t);
-        window_shake.offset.x = RandomFloat(-strength, strength);
-        window_shake.offset.y = RandomFloat(-strength, strength);
+        window_shake.offset.x = (float)(GetRandomValue(-1000, 1000) / 1000.0f) * strength;
+        window_shake.offset.y = (float)(GetRandomValue(-1000, 1000) / 1000.0f) * strength;
     } else {
         window_shake.offset = (Vector2){0, 0};
     }
