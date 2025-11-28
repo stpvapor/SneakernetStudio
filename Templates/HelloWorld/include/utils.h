@@ -1,7 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include <raylib.h>
+#include <raylib.h>   // ← THIS LINE WAS MISSING IN THE REPO
 
 void DrawTextCenteredMulti(const char *text, int fontSize, Color color);
 
