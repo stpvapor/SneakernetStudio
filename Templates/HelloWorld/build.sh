@@ -4,12 +4,13 @@ REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 
 if [[ "$1" == "clean=yes" ]]; then
     rm -rf build .zig-cache
+    rm -f build/lin/CMakeCache.txt  # Force fresh toolchain load
 fi
 
 mkdir -p build/lin
 
-cmake -S . -B build/lin -G Ninja -DCMAKE_TOOLCHAIN_FILE="$REPO_ROOT/tools/Toolchain_Zig.cmake" -DCMAKE_BUILD_TYPE=Debug
+cmake -S . -B build/lin -DCMAKE_TOOLCHAIN_FILE="$REPO_ROOT/tools/Toolchain_Zig.cmake" -DCMAKE_BUILD_TYPE=Debug
 
 cmake --build build/lin -j$(nproc)
 
-echo "Build complete! Run with: ./build/lin/$(basename "$(pwd)")"
+echo "Build complete! Run with: ./build/lin/HelloWorld"
