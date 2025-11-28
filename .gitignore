@@ -1,0 +1,16 @@
+# Build output
+build/
+zig-out/
+.zig-cache/
+
+# Tools downloaded by update-studio.sh (never commit)
+tools/zig/
+tools/cmake/
+tools/raylib/
+
+# Local caches
+*.log
+
+# OS junk
+.DS_Store
+Thumbs.db
