@@ -8,11 +8,12 @@ fi
 
 mkdir -p build/lin
 
-cmake -S . -B build/lin -DCMAKE_TOOLCHAIN_FILE=../../tools/Toolchain_Zig.cmake -DCMAKE_C_COMPILER_FORCED=1 -DCMAKE_CXX_COMPILER_FORCED=1 -DCMAKE_TOOLCHAIN_FILE="$REPO_ROOT/tools/Toolchain_Zig.cmake" -DCMAKE_BUILD_TYPE=Debug
-    -DCMAKE_C_COMPILER_FORCED=1 
-    -DCMAKE_CXX_COMPILER_FORCED=1 
-
+cmake -S . -B build/lin \
+    -DCMAKE_TOOLCHAIN_FILE="$REPO_ROOT/tools/Toolchain_Zig.cmake" \
+    -DCMAKE_C_COMPILER_FORCED=1 \
+    -DCMAKE_CXX_COMPILER_FORCED=1 \
+    -DCMAKE_BUILD_TYPE=Debug
 
 cmake --build build/lin -j$(nproc)
 
-echo "Build complete! Run with: ./build/lin/HelloWorld"
+echo "Build complete! Run with: ./build/lin/$(basename "$(pwd)")"
