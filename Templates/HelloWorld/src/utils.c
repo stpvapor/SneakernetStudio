@@ -1,5 +1,4 @@
 #include "utils.h"
-#include <raylib.h>
 #include <math.h>
 #include <string.h>   // <-- for strchr in text splitter
 
